@@ -41,6 +41,11 @@ impl GenerateRequestBuilder {
         }
     }
 
+    pub fn system_prompt<P: Into<String>>(mut self, system_prompt: P) -> Self {
+        self.generate_request.system = Some(system_prompt.into());
+        self
+    }
+
     pub fn prompt<P: Into<String>>(mut self, prompt: P) -> Self {
         self.generate_request.prompt = Some(prompt.into());
         self

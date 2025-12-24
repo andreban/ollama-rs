@@ -1,10 +1,14 @@
-use futures_util::{StreamExt};
+use async_stream::stream;
+use futures_util::{Stream, StreamExt};
 use serde_json::Value;
-use tokio_util::io::StreamReader;
+use tokio_util::{
+    codec::{FramedRead, LinesCodec},
+    io::StreamReader,
+};
 use tracing::info;
 
 use crate::{
-    error::OllamaResult,
+    error::{OllamaError, OllamaResult},
     types::{
         generate::{GenerateRequest, GenerateResponse},
         ps::RunningModel,
@@ -71,32 +75,42 @@ impl OllamaClient {
     }
 
     /// Generates a response for the provided prompt
-    pub async fn generate(&self, request: GenerateRequest) -> OllamaResult<()> {
+    pub async fn generate(
+        &self,
+        request: GenerateRequest,
+    ) -> impl Stream<Item = OllamaResult<GenerateResponse>> {
         let request_address = format!("{}/api/generate", self.server_address);
         let client = reqwest::Client::new();
-        let response = client
-            .post(request_address)
-            .json(&request)
-            .send()
-            .await?
-            .error_for_status()?;
-        let stream = response.bytes_stream().;
-        // let reader = BufReader::new(stream);
-        let reader = StreamReader(stream);
-        while reader
-        while let Some(item) = stream.next().await {
-            let item = item?;
-            println!("Chunk: {:?}", item?);
-        }
 
-        // let stream_reader = tokio_util::io::StreamReader::new(stream);
-        // let reder = BufReader::new(stream);
-        // let full_response = response.text().await?;
-        // let parts = full_response
-        //     .lines()
-        //     .map(|line| serde_json::from_str::<GenerateResponse>(line).unwrap())
-        //     .collect::<Vec<_>>();
-        // println!("{:#?}", parts);
-        Ok(())
+        // The stream macro creates an asynchronous generator
+        Box::pin(stream! {
+            let response = client
+                .post(request_address)
+                .json(&request)
+                .send()
+                .await
+                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
+
+            let bytes_stream = response.bytes_stream();
+
+            let body_reader = StreamReader::new(
+                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
+            );
+
+            let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
+
+            while let Some(line_result) = lines_stream.next().await {
+                match line_result {
+                    Ok(line_content) => {
+                        if let Ok(parsed) = serde_json::from_str::<GenerateResponse>(&line_content) {
+                            let done = parsed.done;
+                            yield Ok(parsed);
+                            if done { break; }
+                        }
+                    }
+                    Err(e) => yield Err(OllamaError::from(e)),
+                }
+            }
+        })
     }
 }

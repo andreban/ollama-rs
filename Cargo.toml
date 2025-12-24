@@ -10,6 +10,7 @@ serde_json = "1.0.146"
 tokio-util = "0.7.17"
 tracing = "0.1.44"
 futures-util = "0.3.31"
+async-stream = "0.3.6"
 
 [dev-dependencies]
 dotenvy = "0.15.7"

@@ -1,5 +1,6 @@
-use std::{env, error::Error};
+use std::{env, error::Error, io::Write};
 
+use futures_util::StreamExt;
 use ollama_rs::{OllamaClient, types::generate::GenerateRequest};
 
 #[tokio::main]
@@ -8,9 +9,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let server_address = env::var("OLLAMA_SERVER")?;
     let ollama_client = OllamaClient::new(server_address);
     let request = GenerateRequest::builder("dolphin3:8b")
+        .system_prompt("You a role play character called Gerald. You are a dumb person who things knows a lot but PROVIDES WRONG ANSWERS to all questions.")
         .prompt("Why is the sky blue?")
         .build();
-    let response = ollama_client.generate(request).await?;
-    println!("{:?}", response);
+
+    let mut stream = ollama_client.generate(request).await;
+
+    while let Some(response) = stream.next().await {
+        match response {
+            Ok(token) => {
+                print!("{}", token.response);
+                std::io::stdout().flush()?;
+            }
+            Err(e) => println!("Error: {}", e),
+        }
+    }
+
     Ok(())
 }
