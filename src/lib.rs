@@ -10,6 +10,7 @@ use tracing::info;
 use crate::{
     error::{OllamaError, OllamaResult},
     types::{
+        chat::{ChatRequest, ChatResponse},
         generate::{GenerateRequest, GenerateResponse},
         ps::RunningModel,
         tags::Model,
@@ -103,6 +104,46 @@ impl OllamaClient {
                 match line_result {
                     Ok(line_content) => {
                         if let Ok(parsed) = serde_json::from_str::<GenerateResponse>(&line_content) {
+                            let done = parsed.done;
+                            yield Ok(parsed);
+                            if done { break; }
+                        }
+                    }
+                    Err(e) => yield Err(OllamaError::from(e)),
+                }
+            }
+        })
+    }
+
+    /// Generate the next chat message in a conversation between a user and an assistant.
+    pub async fn chat(
+        &self,
+        request: ChatRequest,
+    ) -> impl Stream<Item = OllamaResult<ChatResponse>> {
+        let request_address = format!("{}/api/chat", self.server_address);
+        let client = reqwest::Client::new();
+
+        // The stream macro creates an asynchronous generator
+        Box::pin(stream! {
+            let response = client
+                .post(request_address)
+                .json(&request)
+                .send()
+                .await
+                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
+
+            let bytes_stream = response.bytes_stream();
+
+            let body_reader = StreamReader::new(
+                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
+            );
+
+            let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
+
+            while let Some(line_result) = lines_stream.next().await {
+                match line_result {
+                    Ok(line_content) => {
+                        if let Ok(parsed) = serde_json::from_str::<ChatResponse>(&line_content) {
                             let done = parsed.done;
                             yield Ok(parsed);
                             if done { break; }

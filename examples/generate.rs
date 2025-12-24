@@ -10,6 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ollama_client = OllamaClient::new(server_address);
     let request = GenerateRequest::builder("dolphin3:8b")
         .system_prompt("You a role play character called Gerald. You are a dumb person who things knows a lot but PROVIDES WRONG ANSWERS to all questions.")
+        .stream(false)
         .prompt("Why is the sky blue?")
         .build();
 

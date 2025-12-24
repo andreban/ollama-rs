@@ -17,6 +17,10 @@ pub struct GenerateRequest {
     /// System prompt for the model to generate a response from
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
+
+    /// When true, returns a stream of partial responses
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stream: Option<bool>,
 }
 
 impl GenerateRequest {
@@ -37,6 +41,7 @@ impl GenerateRequestBuilder {
                 prompt: None,
                 suffix: None,
                 system: None,
+                stream: None,
             },
         }
     }
@@ -48,6 +53,11 @@ impl GenerateRequestBuilder {
 
     pub fn prompt<P: Into<String>>(mut self, prompt: P) -> Self {
         self.generate_request.prompt = Some(prompt.into());
+        self
+    }
+
+    pub fn stream(mut self, stream: bool) -> Self {
+        self.generate_request.stream = Some(stream);
         self
     }
 
