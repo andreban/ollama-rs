@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::types::common::Think;
+use crate::types::common::{Options, Think};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateRequest {
@@ -38,6 +38,10 @@ pub struct GenerateRequest {
     /// (true/false) or a string ("high", "medium", "low") for supported models.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub think: Option<Think>,
+
+    /// Runtime options that control text generation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<Options>,
 }
 
 impl GenerateRequest {
@@ -62,6 +66,7 @@ impl GenerateRequestBuilder {
                 images: vec![],
                 format: None,
                 think: None,
+                options: None,
             },
         }
     }
@@ -98,6 +103,11 @@ impl GenerateRequestBuilder {
 
     pub fn think(mut self, think: Think) -> Self {
         self.generate_request.think = Some(think);
+        self
+    }
+
+    pub fn options(mut self, options: Options) -> Self {
+        self.generate_request.options = Some(options);
         self
     }
 

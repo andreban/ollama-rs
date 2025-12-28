@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::types::common::Options;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
@@ -17,8 +19,16 @@ pub struct Message {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatRequest {
     pub model: String,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub messages: Vec<Message>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
+
+    /// Runtime options that control text generation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<Options>,
 }
 
 impl ChatRequest {
@@ -46,12 +56,18 @@ impl ChatRequestBuilder {
                 model: model.into(),
                 messages: vec![],
                 stream: None,
+                options: None,
             },
         }
     }
 
     pub fn messages(mut self, messages: Vec<Message>) -> Self {
         self.chat_request.messages = messages;
+        self
+    }
+
+    pub fn options(mut self, options: Options) -> Self {
+        self.chat_request.options = Some(options);
         self
     }
 
