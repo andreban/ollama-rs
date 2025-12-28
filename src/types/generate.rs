@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::types::common::Think;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateRequest {
@@ -21,6 +24,20 @@ pub struct GenerateRequest {
     /// When true, returns a stream of partial responses
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
+
+    // Base64-encoded images for models that support image input
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<String>,
+
+    // Structured output format for the model to generate a response from.
+    // Supports either the string "json" or a JSON schema object
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<Value>,
+
+    /// When true, returns separate thinking output in addition to content. Can be a boolean
+    /// (true/false) or a string ("high", "medium", "low") for supported models.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub think: Option<Think>,
 }
 
 impl GenerateRequest {
@@ -42,6 +59,9 @@ impl GenerateRequestBuilder {
                 suffix: None,
                 system: None,
                 stream: None,
+                images: vec![],
+                format: None,
+                think: None,
             },
         }
     }
@@ -58,6 +78,26 @@ impl GenerateRequestBuilder {
 
     pub fn stream(mut self, stream: bool) -> Self {
         self.generate_request.stream = Some(stream);
+        self
+    }
+
+    pub fn suffix(mut self, suffix: String) -> Self {
+        self.generate_request.suffix = Some(suffix);
+        self
+    }
+
+    pub fn images(mut self, images: Vec<String>) -> Self {
+        self.generate_request.images = images;
+        self
+    }
+
+    pub fn format<T: Into<Value>>(mut self, value: T) -> Self {
+        self.generate_request.format = Some(value.into());
+        self
+    }
+
+    pub fn think(mut self, think: Think) -> Self {
+        self.generate_request.think = Some(think);
         self
     }
 
