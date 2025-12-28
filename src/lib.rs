@@ -1,5 +1,6 @@
 use async_stream::stream;
 use futures_util::{Stream, StreamExt};
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use tokio_util::{
     codec::{FramedRead, LinesCodec},
@@ -76,27 +77,24 @@ impl OllamaClient {
         Ok(models)
     }
 
-    /// Generates a response for the provided prompt
-    pub async fn generate(
+    async fn stream_response<R: Serialize, T: DeserializeOwned>(
         &self,
-        request: GenerateRequest,
-    ) -> impl Stream<Item = OllamaResult<GenerateResponse>> {
-        let request_address = format!("{}/api/generate", self.server_address);
+        endpoint: String,
+        request: R,
+    ) -> impl Stream<Item = OllamaResult<T>> {
         let client = reqwest::Client::new();
-
-        // The stream macro creates an asynchronous generator
         Box::pin(stream! {
             let response = client
-                .post(request_address)
+                .post(endpoint)
                 .json(&request)
                 .send()
                 .await
-                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
+                .map_err(OllamaError::from)?; // Adjust based on your error type
 
             let bytes_stream = response.bytes_stream();
 
             let body_reader = StreamReader::new(
-                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
+                bytes_stream.map(|res| res.map_err(std::io::Error::other)),
             );
 
             let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
@@ -104,16 +102,23 @@ impl OllamaClient {
             while let Some(line_result) = lines_stream.next().await {
                 match line_result {
                     Ok(line_content) => {
-                        if let Ok(parsed) = serde_json::from_str::<GenerateResponse>(&line_content) {
-                            let done = parsed.done;
+                        if let Ok(parsed) = serde_json::from_str::<T>(&line_content) {
                             yield Ok(parsed);
-                            if done { break; }
                         }
                     }
                     Err(e) => yield Err(OllamaError::from(e)),
                 }
             }
         })
+    }
+
+    /// Generates a response for the provided prompt
+    pub async fn generate(
+        &self,
+        request: GenerateRequest,
+    ) -> impl Stream<Item = OllamaResult<GenerateResponse>> {
+        let request_address = format!("{}/api/generate", self.server_address);
+        self.stream_response(request_address, request).await
     }
 
     /// Generate the next chat message in a conversation between a user and an assistant.
@@ -122,38 +127,7 @@ impl OllamaClient {
         request: ChatRequest,
     ) -> impl Stream<Item = OllamaResult<ChatResponse>> {
         let request_address = format!("{}/api/chat", self.server_address);
-        let client = reqwest::Client::new();
-
-        // The stream macro creates an asynchronous generator
-        Box::pin(stream! {
-            let response = client
-                .post(request_address)
-                .json(&request)
-                .send()
-                .await
-                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
-
-            let bytes_stream = response.bytes_stream();
-
-            let body_reader = StreamReader::new(
-                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
-            );
-
-            let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
-
-            while let Some(line_result) = lines_stream.next().await {
-                match line_result {
-                    Ok(line_content) => {
-                        if let Ok(parsed) = serde_json::from_str::<ChatResponse>(&line_content) {
-                            let done = parsed.done;
-                            yield Ok(parsed);
-                            if done { break; }
-                        }
-                    }
-                    Err(e) => yield Err(OllamaError::from(e)),
-                }
-            }
-        })
+        self.stream_response(request_address, request).await
     }
 
     pub async fn pull(
@@ -161,35 +135,6 @@ impl OllamaClient {
         request: PullRequest,
     ) -> impl Stream<Item = OllamaResult<PullResponse>> {
         let request_address = format!("{}/api/pull", self.server_address);
-        let client = reqwest::Client::new();
-
-        Box::pin(stream! {
-            let response = client
-                .post(request_address)
-                .json(&request)
-                .send()
-                .await
-                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
-
-            let bytes_stream = response.bytes_stream();
-
-            let body_reader = StreamReader::new(
-                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
-            );
-
-            let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
-
-            while let Some(line_result) = lines_stream.next().await {
-                match line_result {
-                    Ok(line_content) => {
-                        println!("{line_content}");
-                        if let Ok(parsed) = serde_json::from_str::<PullResponse>(&line_content) {
-                            yield Ok(parsed);
-                        }
-                    }
-                    Err(e) => yield Err(OllamaError::from(e)),
-                }
-            }
-        })
+        self.stream_response(request_address, request).await
     }
 }

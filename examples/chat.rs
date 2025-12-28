@@ -39,6 +39,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             full_message += &response.message.content;
             print!("{}", response.message.content);
             std::io::stdout().flush()?;
+            if response.done {
+                break;
+            }
         }
         println!();
 

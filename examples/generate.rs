@@ -21,6 +21,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Ok(token) => {
                 print!("{}", token.response);
                 std::io::stdout().flush()?;
+                if token.done {
+                    break;
+                }
             }
             Err(e) => println!("Error: {}", e),
         }
