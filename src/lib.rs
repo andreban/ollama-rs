@@ -13,6 +13,7 @@ use crate::{
         chat::{ChatRequest, ChatResponse},
         generate::{GenerateRequest, GenerateResponse},
         ps::RunningModel,
+        pull::{PullRequest, PullResponse},
         tags::Model,
     },
 };
@@ -147,6 +148,43 @@ impl OllamaClient {
                             let done = parsed.done;
                             yield Ok(parsed);
                             if done { break; }
+                        }
+                    }
+                    Err(e) => yield Err(OllamaError::from(e)),
+                }
+            }
+        })
+    }
+
+    pub async fn pull(
+        &self,
+        request: PullRequest,
+    ) -> impl Stream<Item = OllamaResult<PullResponse>> {
+        let request_address = format!("{}/api/pull", self.server_address);
+        let client = reqwest::Client::new();
+
+        Box::pin(stream! {
+            let response = client
+                .post(request_address)
+                .json(&request)
+                .send()
+                .await
+                .map_err(|e| OllamaError::from(e))?; // Adjust based on your error type
+
+            let bytes_stream = response.bytes_stream();
+
+            let body_reader = StreamReader::new(
+                bytes_stream.map(|res| res.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))),
+            );
+
+            let mut lines_stream = FramedRead::new(body_reader, LinesCodec::new());
+
+            while let Some(line_result) = lines_stream.next().await {
+                match line_result {
+                    Ok(line_content) => {
+                        println!("{line_content}");
+                        if let Ok(parsed) = serde_json::from_str::<PullResponse>(&line_content) {
+                            yield Ok(parsed);
                         }
                     }
                     Err(e) => yield Err(OllamaError::from(e)),
