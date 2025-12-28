@@ -3,6 +3,11 @@ use serde::{Deserialize, Serialize};
 use crate::types::common::ModelDetails;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct TagsResponse {
+    pub models: Vec<Model>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Model {
     pub name: String,
     pub model: String,

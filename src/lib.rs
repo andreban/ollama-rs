@@ -1,7 +1,6 @@
 use async_stream::stream;
 use futures_util::{Stream, StreamExt};
 use serde::{Serialize, de::DeserializeOwned};
-use serde_json::Value;
 use tokio_util::{
     codec::{FramedRead, LinesCodec},
     io::StreamReader,
@@ -13,9 +12,9 @@ use crate::{
     types::{
         chat::{ChatRequest, ChatResponse},
         generate::{GenerateRequest, GenerateResponse},
-        ps::RunningModel,
+        ps::PsResponse,
         pull::{PullRequest, PullResponse},
-        tags::Model,
+        tags::TagsResponse,
         version::VersionResponse,
     },
 };
@@ -34,6 +33,7 @@ impl OllamaClient {
         }
     }
 
+    /// Retrieve the version of the Ollama
     pub async fn version(&self) -> OllamaResult<VersionResponse> {
         let request_address = format!("{}/api/version", self.server_address);
         Ok(reqwest::get(request_address)
@@ -44,47 +44,25 @@ impl OllamaClient {
     }
 
     /// Fetch a list of models and their details
-    pub async fn tags(&self) -> OllamaResult<Vec<Model>> {
+    pub async fn tags(&self) -> OllamaResult<TagsResponse> {
         let request_address = format!("{}/api/tags", self.server_address);
         info!("List models: {}", request_address);
-        let mut response: Value = reqwest::get(request_address)
+        Ok(reqwest::get(request_address)
             .await?
             .error_for_status()?
             .json()
-            .await?;
-
-        let Some(response) = response.as_object_mut() else {
-            return Ok(vec![]);
-        };
-
-        let Some(models) = response.remove("models") else {
-            return Ok(vec![]);
-        };
-
-        let models = serde_json::from_value(models)?;
-        Ok(models)
+            .await?)
     }
 
     /// Retrieve a list of models that are currently running
-    pub async fn list_runnning_models(&self) -> OllamaResult<Vec<RunningModel>> {
+    pub async fn ps(&self) -> OllamaResult<PsResponse> {
         let request_address = format!("{}/api/ps", self.server_address);
         info!("List models: {}", request_address);
-        let mut response: Value = reqwest::get(request_address)
+        Ok(reqwest::get(request_address)
             .await?
             .error_for_status()?
             .json()
-            .await?;
-
-        let Some(response) = response.as_object_mut() else {
-            return Ok(vec![]);
-        };
-
-        let Some(models) = response.remove("models") else {
-            return Ok(vec![]);
-        };
-
-        let models = serde_json::from_value(models)?;
-        Ok(models)
+            .await?)
     }
 
     async fn stream_response<R: Serialize, T: DeserializeOwned>(
@@ -140,6 +118,7 @@ impl OllamaClient {
         self.stream_response(request_address, request).await
     }
 
+    /// Pull a model
     pub async fn pull(
         &self,
         request: PullRequest,

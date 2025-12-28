@@ -8,8 +8,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let _ = dotenvy::dotenv();
     let server_address = env::var("OLLAMA_SERVER")?;
     let ollama_client = OllamaClient::new(server_address);
-    let models = ollama_client.tags().await?;
-    for model in models {
+    let response = ollama_client.tags().await?;
+    for model in response.models {
         println!("{:?}", model);
     }
     Ok(())

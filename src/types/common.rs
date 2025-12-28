@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct ModelDetails {
     pub format: String,
     pub family: String,
-    pub families: Vec<String>,
+    pub families: Option<Vec<String>>,
     pub parameter_size: String,
     pub quantization_level: String,
 }
