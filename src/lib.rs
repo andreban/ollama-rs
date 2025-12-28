@@ -16,6 +16,7 @@ use crate::{
         ps::RunningModel,
         pull::{PullRequest, PullResponse},
         tags::Model,
+        version::VersionResponse,
     },
 };
 
@@ -31,6 +32,15 @@ impl OllamaClient {
         Self {
             server_address: server_address.as_ref().to_string(),
         }
+    }
+
+    pub async fn version(&self) -> OllamaResult<VersionResponse> {
+        let request_address = format!("{}/api/version", self.server_address);
+        Ok(reqwest::get(request_address)
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
     }
 
     /// Fetch a list of models and their details

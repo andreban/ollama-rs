@@ -4,3 +4,4 @@ pub mod generate;
 pub mod ps;
 pub mod pull;
 pub mod tags;
+pub mod version;
