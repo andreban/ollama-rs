@@ -65,7 +65,7 @@ impl OllamaClient {
             .await?)
     }
 
-    async fn stream_response<R: Serialize, T: DeserializeOwned>(
+    fn stream_response<R: Serialize, T: DeserializeOwned>(
         &self,
         endpoint: String,
         request: R,
@@ -101,29 +101,23 @@ impl OllamaClient {
     }
 
     /// Generates a response for the provided prompt
-    pub async fn generate(
+    pub fn generate(
         &self,
         request: GenerateRequest,
     ) -> impl Stream<Item = OllamaResult<GenerateResponse>> {
         let request_address = format!("{}/api/generate", self.server_address);
-        self.stream_response(request_address, request).await
+        self.stream_response(request_address, request)
     }
 
     /// Generate the next chat message in a conversation between a user and an assistant.
-    pub async fn chat(
-        &self,
-        request: ChatRequest,
-    ) -> impl Stream<Item = OllamaResult<ChatResponse>> {
+    pub fn chat(&self, request: ChatRequest) -> impl Stream<Item = OllamaResult<ChatResponse>> {
         let request_address = format!("{}/api/chat", self.server_address);
-        self.stream_response(request_address, request).await
+        self.stream_response(request_address, request)
     }
 
     /// Pull a model
-    pub async fn pull(
-        &self,
-        request: PullRequest,
-    ) -> impl Stream<Item = OllamaResult<PullResponse>> {
+    pub fn pull(&self, request: PullRequest) -> impl Stream<Item = OllamaResult<PullResponse>> {
         let request_address = format!("{}/api/pull", self.server_address);
-        self.stream_response(request_address, request).await
+        self.stream_response(request_address, request)
     }
 }

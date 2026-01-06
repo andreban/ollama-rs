@@ -14,8 +14,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .prompt("Why is the sky blue?")
         .build();
 
-    let mut stream = ollama_client.generate(request).await;
-
+    let mut stream = ollama_client.generate(request);
     while let Some(response) = stream.next().await {
         match response {
             Ok(token) => {
