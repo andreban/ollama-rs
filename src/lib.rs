@@ -22,6 +22,7 @@ use crate::{
 pub mod error;
 pub mod types;
 
+#[derive(Clone)]
 pub struct OllamaClient {
     server_address: String,
 }
