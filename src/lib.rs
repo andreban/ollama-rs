@@ -76,9 +76,10 @@ impl OllamaClient {
                 .post(endpoint)
                 .json(&request)
                 .send()
-                .await
-                .map_err(OllamaError::from)?; // Adjust based on your error type
+                .await?
+                .error_for_status()?;
 
+            println!("{:?}", response);
             let bytes_stream = response.bytes_stream();
 
             let body_reader = StreamReader::new(
