@@ -63,6 +63,9 @@ pub struct ChatRequest {
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tools: Vec<Tool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<Value>,
 }
 
 impl ChatRequest {
@@ -92,6 +95,7 @@ impl ChatRequestBuilder {
                 stream: None,
                 options: None,
                 tools: vec![],
+                format: None,
             },
         }
     }
@@ -113,6 +117,11 @@ impl ChatRequestBuilder {
 
     pub fn stream(mut self, stream: bool) -> Self {
         self.chat_request.stream = Some(stream);
+        self
+    }
+
+    pub fn format(mut self, json_schema: Value) -> Self {
+        self.chat_request.format = Some(json_schema);
         self
     }
 
