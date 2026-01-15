@@ -5,7 +5,7 @@ use tokio_util::{
     codec::{FramedRead, LinesCodec},
     io::StreamReader,
 };
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::{
     error::{OllamaError, OllamaResult},
@@ -80,7 +80,7 @@ impl OllamaClient {
                 .await?
                 .error_for_status()?;
 
-            println!("{:?}", response);
+            debug!("{:?}", response);
             let bytes_stream = response.bytes_stream();
 
             let body_reader = StreamReader::new(
@@ -92,6 +92,7 @@ impl OllamaClient {
             while let Some(line_result) = lines_stream.next().await {
                 match line_result {
                     Ok(line_content) => {
+                        debug!(chunk = line_content, "ollama response chunk");
                         if let Ok(parsed) = serde_json::from_str::<T>(&line_content) {
                             yield Ok(parsed);
                         }

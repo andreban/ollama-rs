@@ -2,10 +2,15 @@ use std::{env, error::Error, io::Write};
 
 use futures_util::StreamExt;
 use ollama_rs::{OllamaClient, types::generate::GenerateRequest};
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _ = dotenvy::dotenv();
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
     let server_address = env::var("OLLAMA_SERVER")?;
     let ollama_client = OllamaClient::new(server_address);
     let request = GenerateRequest::builder("dolphin3:8b")
