@@ -16,9 +16,9 @@ impl Error for OllamaError {}
 impl Display for OllamaError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OllamaError::NetworkError(e) => writeln!(f, "Network error: {}", e),
-            OllamaError::ResponseParseError(e) => writeln!(f, "ResponseParseError error: {}", e),
-            OllamaError::LinesCoderError(e) => writeln!(f, "LinesCoderError error: {}", e),
+            OllamaError::NetworkError(e) => write!(f, "Network error: {}", e),
+            OllamaError::ResponseParseError(e) => write!(f, "Response parse error: {}", e),
+            OllamaError::LinesCoderError(e) => write!(f, "Lines codec error: {}", e),
         }
     }
 }
