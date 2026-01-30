@@ -104,8 +104,9 @@ impl OllamaClient {
                 match line_result {
                     Ok(line_content) => {
                         debug!(chunk = line_content, "ollama response chunk");
-                        if let Ok(parsed) = serde_json::from_str::<T>(&line_content) {
-                            yield Ok(parsed);
+                        if !line_content.is_empty() {
+                            yield serde_json::from_str::<T>(&line_content)
+                                .map_err(OllamaError::from);
                         }
                     }
                     Err(e) => yield Err(OllamaError::from(e)),
