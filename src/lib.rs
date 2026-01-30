@@ -28,6 +28,12 @@ pub struct OllamaClient {
     client: reqwest::Client,
 }
 
+impl Default for OllamaClient {
+    fn default() -> Self {
+        Self::new("http://localhost:11434")
+    }
+}
+
 impl OllamaClient {
     pub fn new<S: AsRef<str>>(server_address: S) -> Self {
         Self {
