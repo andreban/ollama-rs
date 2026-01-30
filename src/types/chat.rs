@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::OllamaResult;
-use crate::types::common::Options;
+use crate::types::common::{Options, Think};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -66,6 +66,11 @@ pub struct ChatRequest {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<Value>,
+
+    /// When set, returns separate thinking output in addition to content. Can be a boolean
+    /// (true/false) or a string ("high", "medium", "low") for supported models.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub think: Option<Think>,
 }
 
 impl ChatRequest {
@@ -96,6 +101,7 @@ impl ChatRequestBuilder {
                 options: None,
                 tools: vec![],
                 format: None,
+                think: None,
             },
         }
     }
@@ -122,6 +128,11 @@ impl ChatRequestBuilder {
 
     pub fn format(mut self, json_schema: Value) -> Self {
         self.chat_request.format = Some(json_schema);
+        self
+    }
+
+    pub fn think(mut self, think: Think) -> Self {
+        self.chat_request.think = Some(think);
         self
     }
 
