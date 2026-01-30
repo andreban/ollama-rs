@@ -12,7 +12,7 @@ pub struct Model {
     pub name: String,
     pub model: String,
     pub modified_at: String,
-    pub size: usize,
+    pub size: u64,
     pub digest: String,
     pub details: ModelDetails,
 }

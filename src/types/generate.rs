@@ -137,20 +137,20 @@ pub struct GenerateResponse {
     pub done_reason: Option<String>,
 
     /// Time spent generating the response in nanoseconds
-    pub total_duration: Option<usize>,
+    pub total_duration: Option<u64>,
 
     /// Time spent loading the model in nanoseconds
-    pub load_duration: Option<usize>,
+    pub load_duration: Option<u64>,
 
     /// Number of input tokens in the prompt
-    pub prompt_eval_count: Option<usize>,
+    pub prompt_eval_count: Option<u64>,
 
     /// Time spent evaluating the prompt in nanoseconds
-    pub prompt_eval_duration: Option<usize>,
+    pub prompt_eval_duration: Option<u64>,
 
     /// Number of output tokens generated in the response
-    pub eval_count: Option<usize>,
+    pub eval_count: Option<u64>,
 
     /// Time spent generating tokens in nanoseconds
-    pub eval_duration: Option<usize>,
+    pub eval_duration: Option<u64>,
 }

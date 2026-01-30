@@ -11,10 +11,10 @@ pub struct PsResponse {
 pub struct RunningModel {
     pub name: String,
     pub model: String,
-    pub size: usize,
+    pub size: u64,
     pub digest: String,
     pub details: ModelDetails,
     pub expires_at: String,
-    pub size_vram: usize,
+    pub size_vram: u64,
     pub context_length: u32,
 }
