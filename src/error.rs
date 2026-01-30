@@ -1,13 +1,34 @@
+//! Error types for the Ollama client.
+//!
+//! This module defines [`OllamaError`], the unified error type returned by all
+//! client operations, and the [`OllamaResult<T>`] type alias for convenience.
+
 use std::{error::Error, fmt::Display};
 
 use tokio_util::codec::LinesCodecError;
 
+/// A type alias for `Result<T, OllamaError>`.
+///
+/// Used throughout the crate as the standard return type for fallible operations.
 pub type OllamaResult<T> = Result<T, OllamaError>;
 
+/// Errors that can occur when communicating with the Ollama server.
+///
+/// This enum covers three failure categories:
+///
+/// - **Network** -- connection failures, timeouts, or HTTP error status codes.
+/// - **Parsing** -- the server returned a response that could not be deserialized as JSON.
+/// - **Streaming** -- an error occurred while reading a streaming response line-by-line.
+///
+/// All variants wrap their underlying error and implement [`std::error::Error`],
+/// [`Display`], and the relevant [`From`] conversions so they work seamlessly with `?`.
 #[derive(Debug)]
 pub enum OllamaError {
+    /// An HTTP or connection-level error from [`reqwest`].
     NetworkError(reqwest::Error),
+    /// A JSON deserialization error from [`serde_json`].
     ResponseParseError(serde_json::Error),
+    /// An error from the line-delimited streaming codec.
     LinesCodecError(LinesCodecError),
 }
 

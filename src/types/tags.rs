@@ -1,19 +1,35 @@
+//! Types for the model listing endpoint (`GET /api/tags`).
+//!
+//! The response from [`OllamaClient::tags()`](crate::OllamaClient::tags) is
+//! deserialized into a [`TagsResponse`].
+
 use serde::{Deserialize, Serialize};
 
 use crate::types::common::ModelDetails;
 
+/// Response from the `GET /api/tags` endpoint.
+///
+/// Contains a list of all models available on the Ollama server.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TagsResponse {
+    /// The available models.
     pub models: Vec<Model>,
 }
 
+/// An available model on the Ollama server.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Model {
+    /// The model name including tag (e.g., `"llama3:latest"`).
     pub name: String,
+    /// The model identifier.
     pub model: String,
+    /// ISO 8601 timestamp of when the model was last modified.
     pub modified_at: String,
+    /// Total model size in bytes.
     pub size: u64,
+    /// The SHA-256 digest of the model.
     pub digest: String,
+    /// Detailed model metadata.
     pub details: ModelDetails,
 }
 

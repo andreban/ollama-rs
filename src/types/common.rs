@@ -1,65 +1,132 @@
+//! Types shared across multiple Ollama API endpoints.
+//!
+//! This module provides:
+//!
+//! - [`Options`] / [`OptionsBuilder`] -- sampling and generation parameters.
+//! - [`Think`] / [`ThinkLevel`] -- controls for extended-thinking (reasoning) mode.
+//! - [`Stop`] -- stop-sequence configuration.
+//! - [`ModelDetails`] -- metadata returned when listing models.
+
 use serde::{Deserialize, Serialize};
 
+/// Detailed metadata about a model, returned by the tags and ps endpoints.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelDetails {
+    /// The model file format (e.g., `"gguf"`).
     pub format: String,
+    /// The primary model family (e.g., `"llama"`).
     pub family: String,
+    /// Additional model families, if any (e.g., `["llama", "clip"]`).
     pub families: Option<Vec<String>>,
+    /// Human-readable parameter count (e.g., `"8B"`).
     pub parameter_size: String,
+    /// Quantization level (e.g., `"Q4_0"`).
     pub quantization_level: String,
 }
 
+/// Controls extended-thinking (reasoning) mode for supported models.
+///
+/// Can be a simple boolean toggle or a named level. Serialized as an untagged
+/// enum so `true`, `false`, `"high"`, `"medium"`, and `"low"` are all valid JSON
+/// representations.
+///
+/// # Examples
+///
+/// ```
+/// use ollama_rs::types::common::Think;
+///
+/// // Enable thinking
+/// let think = Think::Bool(true);
+///
+/// // Use a specific thinking level
+/// use ollama_rs::types::common::ThinkLevel;
+/// let think = Think::Level(ThinkLevel::High);
+/// ```
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Think {
+    /// Enable (`true`) or disable (`false`) thinking mode.
     Bool(bool),
+    /// Use a named thinking intensity level.
     Level(ThinkLevel),
 }
 
+/// Named intensity levels for extended-thinking mode.
+///
+/// Serialized as lowercase strings: `"high"`, `"medium"`, `"low"`.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ThinkLevel {
+    /// Maximum reasoning depth.
     High,
+    /// Balanced reasoning depth.
     Medium,
+    /// Minimal reasoning depth.
     Low,
 }
 
+/// Runtime options that control text generation behavior.
+///
+/// All fields are optional. Only fields set to `Some` are included in the
+/// serialized JSON request, letting the server apply its own defaults for
+/// omitted parameters.
+///
+/// Use [`Options::builder()`] for ergonomic construction.
+///
+/// # Examples
+///
+/// ```
+/// use ollama_rs::types::common::{Options, Stop};
+///
+/// let options = Options::builder()
+///     .temperature(0.7)
+///     .top_k(40)
+///     .stop(Stop::Single("END".to_string()))
+///     .build();
+/// ```
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Options {
-    /// Random seed used for reproducible outputs
+    /// Random seed for reproducible outputs.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub seed: Option<u64>,
 
-    /// Controls randomness in generation (higher = more random)
+    /// Controls randomness in generation. Higher values (e.g., `1.5`) produce
+    /// more creative output; lower values (e.g., `0.2`) produce more
+    /// deterministic output.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
 
-    /// Limits next token selection to the K most likely
+    /// Limits the next-token selection to the *K* most likely tokens.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_k: Option<u32>,
 
-    /// Cumulative probability threshold for nucleus sampling
+    /// Cumulative probability threshold for nucleus sampling.
+    /// A value of `0.9` means only the smallest set of tokens whose cumulative
+    /// probability exceeds 90% are considered.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_p: Option<f32>,
 
-    /// Minimum probability threshold for token selection
+    /// Minimum probability threshold for token selection.
+    /// Tokens with probability below this value are discarded.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min_p: Option<f32>,
 
-    /// Stop sequences that will halt generation
+    /// One or more stop sequences that will halt generation when produced.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop: Option<Stop>,
 
-    /// Context length size (number of tokens)
+    /// Context window size in tokens. Determines how many tokens the model
+    /// can attend to at once.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub num_ctx: Option<u32>,
 
-    /// Maximum number of tokens to generate
+    /// Maximum number of tokens to generate in the response.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub num_predict: Option<u32>,
 }
 
 impl Options {
+    /// Returns an [`OptionsBuilder`] for constructing an `Options` value.
     pub fn builder() -> OptionsBuilder {
         OptionsBuilder {
             options: Options::default(),
@@ -67,60 +134,98 @@ impl Options {
     }
 }
 
+/// A builder for constructing [`Options`] with only the desired parameters set.
+///
+/// Obtain a builder via [`Options::builder()`].
+///
+/// # Examples
+///
+/// ```
+/// use ollama_rs::types::common::Options;
+///
+/// let options = Options::builder()
+///     .seed(42)
+///     .temperature(0.8)
+///     .num_predict(256)
+///     .build();
+/// ```
 pub struct OptionsBuilder {
     options: Options,
 }
 
 impl OptionsBuilder {
+    /// Sets the random seed for reproducible outputs.
     pub fn seed(mut self, seed: u64) -> Self {
         self.options.seed = Some(seed);
         self
     }
 
+    /// Sets the temperature for generation randomness.
     pub fn temperature(mut self, temperature: f32) -> Self {
         self.options.temperature = Some(temperature);
         self
     }
 
+    /// Sets the top-K sampling parameter.
     pub fn top_k(mut self, top_k: u32) -> Self {
         self.options.top_k = Some(top_k);
         self
     }
 
+    /// Sets the nucleus sampling probability threshold.
     pub fn top_p(mut self, top_p: f32) -> Self {
         self.options.top_p = Some(top_p);
         self
     }
 
+    /// Sets the minimum probability threshold for token selection.
     pub fn min_p(mut self, min_p: f32) -> Self {
         self.options.min_p = Some(min_p);
         self
     }
 
+    /// Sets one or more stop sequences.
     pub fn stop(mut self, stop: Stop) -> Self {
         self.options.stop = Some(stop);
         self
     }
 
+    /// Sets the context window size in tokens.
     pub fn num_ctx(mut self, num_ctx: u32) -> Self {
         self.options.num_ctx = Some(num_ctx);
         self
     }
 
+    /// Sets the maximum number of tokens to generate.
     pub fn num_predict(mut self, num_predict: u32) -> Self {
         self.options.num_predict = Some(num_predict);
         self
     }
 
+    /// Consumes the builder and returns the configured [`Options`].
     pub fn build(self) -> Options {
         self.options
     }
 }
 
+/// Stop sequences that halt text generation when produced by the model.
+///
+/// Serialized as an untagged enum: a single string or an array of strings.
+///
+/// # Examples
+///
+/// ```
+/// use ollama_rs::types::common::Stop;
+///
+/// let single = Stop::Single("END".to_string());
+/// let multiple = Stop::Multiple(vec!["END".to_string(), "STOP".to_string()]);
+/// ```
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Stop {
+    /// A single stop sequence.
     Single(String),
+    /// Multiple stop sequences.
     Multiple(Vec<String>),
 }
 

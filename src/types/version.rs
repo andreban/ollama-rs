@@ -1,7 +1,14 @@
+//! Types for the server version endpoint (`GET /api/version`).
+//!
+//! The response from [`OllamaClient::version()`](crate::OllamaClient::version)
+//! is deserialized into a [`VersionResponse`].
+
 use serde::{Deserialize, Serialize};
 
+/// Response from the `GET /api/version` endpoint.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VersionResponse {
+    /// The Ollama server version string (e.g., `"0.6.2"`).
     pub version: String,
 }
 

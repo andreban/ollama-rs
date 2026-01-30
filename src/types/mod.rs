@@ -1,3 +1,20 @@
+//! Request and response types for the Ollama API.
+//!
+//! Each submodule corresponds to an API endpoint:
+//!
+//! | Module       | Endpoint          | Description                              |
+//! |--------------|-------------------|------------------------------------------|
+//! | [`chat`]     | `POST /api/chat`     | Multi-turn chat conversations         |
+//! | [`generate`] | `POST /api/generate` | Single-prompt text generation         |
+//! | [`pull`]     | `POST /api/pull`     | Download models from the registry     |
+//! | [`tags`]     | `GET /api/tags`      | List available models                 |
+//! | [`ps`]       | `GET /api/ps`        | List currently loaded/running models  |
+//! | [`version`]  | `GET /api/version`   | Query the server version              |
+//!
+//! The [`common`] module contains types shared across multiple endpoints, such as
+//! [`Options`](common::Options) for generation parameters, [`Think`](common::Think)
+//! for reasoning mode, and [`ModelDetails`](common::ModelDetails).
+
 pub mod chat;
 pub mod common;
 pub mod generate;
