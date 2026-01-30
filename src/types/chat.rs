@@ -51,7 +51,6 @@ impl Message {
 pub struct ChatRequest {
     pub model: String,
 
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub messages: Vec<Message>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
