@@ -25,19 +25,24 @@ pub mod types;
 #[derive(Clone)]
 pub struct OllamaClient {
     server_address: String,
+    client: reqwest::Client,
 }
 
 impl OllamaClient {
     pub fn new<S: AsRef<str>>(server_address: S) -> Self {
         Self {
             server_address: server_address.as_ref().to_string(),
+            client: reqwest::Client::new(),
         }
     }
 
     /// Retrieve the version of the Ollama
     pub async fn version(&self) -> OllamaResult<VersionResponse> {
         let request_address = format!("{}/api/version", self.server_address);
-        Ok(reqwest::get(request_address)
+        Ok(self
+            .client
+            .get(request_address)
+            .send()
             .await?
             .error_for_status()?
             .json()
@@ -48,7 +53,10 @@ impl OllamaClient {
     pub async fn tags(&self) -> OllamaResult<TagsResponse> {
         let request_address = format!("{}/api/tags", self.server_address);
         info!("List models: {}", request_address);
-        Ok(reqwest::get(request_address)
+        Ok(self
+            .client
+            .get(request_address)
+            .send()
             .await?
             .error_for_status()?
             .json()
@@ -59,7 +67,10 @@ impl OllamaClient {
     pub async fn ps(&self) -> OllamaResult<PsResponse> {
         let request_address = format!("{}/api/ps", self.server_address);
         info!("List models: {}", request_address);
-        Ok(reqwest::get(request_address)
+        Ok(self
+            .client
+            .get(request_address)
+            .send()
             .await?
             .error_for_status()?
             .json()
@@ -71,7 +82,7 @@ impl OllamaClient {
         endpoint: String,
         request: R,
     ) -> impl Stream<Item = OllamaResult<T>> {
-        let client = reqwest::Client::new();
+        let client = self.client.clone();
         Box::pin(stream! {
             let response = client
                 .post(endpoint)
