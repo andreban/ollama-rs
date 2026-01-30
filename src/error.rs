@@ -8,7 +8,7 @@ pub type OllamaResult<T> = Result<T, OllamaError>;
 pub enum OllamaError {
     NetworkError(reqwest::Error),
     ResponseParseError(serde_json::Error),
-    LinesCoderError(LinesCodecError),
+    LinesCodecError(LinesCodecError),
 }
 
 impl Error for OllamaError {}
@@ -18,7 +18,7 @@ impl Display for OllamaError {
         match self {
             OllamaError::NetworkError(e) => write!(f, "Network error: {}", e),
             OllamaError::ResponseParseError(e) => write!(f, "Response parse error: {}", e),
-            OllamaError::LinesCoderError(e) => write!(f, "Lines codec error: {}", e),
+            OllamaError::LinesCodecError(e) => write!(f, "Lines codec error: {}", e),
         }
     }
 }
@@ -37,6 +37,6 @@ impl From<serde_json::Error> for OllamaError {
 
 impl From<LinesCodecError> for OllamaError {
     fn from(value: LinesCodecError) -> Self {
-        Self::LinesCoderError(value)
+        Self::LinesCodecError(value)
     }
 }
