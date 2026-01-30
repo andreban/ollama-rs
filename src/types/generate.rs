@@ -7,14 +7,14 @@ use crate::types::common::{Options, Think};
 pub struct GenerateRequest {
     /// Model name
     pub model: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
 
     /// Text for the model to generate a response from
-    pub prompt: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
 
     /// Used for fill-in-the-middle models, text that appears after the user prompt and before the
     /// model response
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 
     /// System prompt for the model to generate a response from
@@ -25,12 +25,12 @@ pub struct GenerateRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
 
-    // Base64-encoded images for models that support image input
+    /// Base64-encoded images for models that support image input
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<String>,
 
-    // Structured output format for the model to generate a response from.
-    // Supports either the string "json" or a JSON schema object
+    /// Structured output format for the model to generate a response from.
+    /// Supports either the string "json" or a JSON schema object
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<Value>,
 
