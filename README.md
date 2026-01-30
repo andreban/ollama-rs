@@ -143,7 +143,7 @@ let request = ChatRequest::builder("llama3:8b")
     .build();
 ```
 
-When the model decides to call a tool, the response `message.tool_calls` field will contain the tool name and arguments. You can then execute the function and send the result back via `Message::tool_response(...)`.
+When the model decides to call a tool, the response `message.tool_calls` field will contain the tool name and arguments. You can then execute the function and send the result back via `Message::tool_response(...)` which returns an `OllamaResult<Message>`.
 
 ## API Reference
 
@@ -151,7 +151,9 @@ When the model decides to call a tool, the response `message.tool_calls` field w
 
 | Method | Description |
 |--------|-------------|
-| `new(server_address)` | Create a new client pointing at an Ollama server |
+| `new(server_address)` | Create a new client with a 30-second connection timeout |
+| `default()` | Create a client connecting to `http://localhost:11434` |
+| `builder(server_address)` | Create a client with custom configuration (see below) |
 | `version()` | Get the Ollama server version |
 | `tags()` | List all available models |
 | `ps()` | List currently running/loaded models |
@@ -159,11 +161,22 @@ When the model decides to call a tool, the response `message.tool_calls` field w
 | `chat(request)` | Chat conversation (streaming) |
 | `pull(request)` | Pull/download a model (streaming) |
 
+**`OllamaClient::builder(server_address)`** -- `.connection_timeout(Duration)`, `.build()`
+
+```rust
+use std::time::Duration;
+use ollama_rs::OllamaClient;
+
+let client = OllamaClient::builder("http://localhost:11434")
+    .connection_timeout(Duration::from_secs(60))
+    .build();
+```
+
 ### Request Builders
 
 **`GenerateRequest::builder(model)`** -- `.prompt()`, `.system_prompt()`, `.format()`, `.options()`, `.stream()`, `.think()`, `.images()`, `.suffix()`
 
-**`ChatRequest::builder(model)`** -- `.messages()`, `.tools()`, `.format()`, `.options()`, `.stream()`
+**`ChatRequest::builder(model)`** -- `.messages()`, `.tools()`, `.format()`, `.options()`, `.stream()`, `.think()`
 
 **`PullRequest::builder(model)`** -- `.stream()`
 

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use async_stream::stream;
 use futures_util::{Stream, StreamExt};
 use serde::{Serialize, de::DeserializeOwned};
@@ -22,6 +24,8 @@ use crate::{
 pub mod error;
 pub mod types;
 
+const DEFAULT_CONNECTION_TIMEOUT: Duration = Duration::from_secs(30);
+
 #[derive(Clone)]
 pub struct OllamaClient {
     server_address: String,
@@ -38,7 +42,17 @@ impl OllamaClient {
     pub fn new<S: AsRef<str>>(server_address: S) -> Self {
         Self {
             server_address: server_address.as_ref().to_string(),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
+                .build()
+                .expect("failed to build reqwest client"),
+        }
+    }
+
+    pub fn builder<S: AsRef<str>>(server_address: S) -> OllamaClientBuilder {
+        OllamaClientBuilder {
+            server_address: server_address.as_ref().to_string(),
+            connection_timeout: DEFAULT_CONNECTION_TIMEOUT,
         }
     }
 
@@ -140,5 +154,58 @@ impl OllamaClient {
     pub fn pull(&self, request: PullRequest) -> impl Stream<Item = OllamaResult<PullResponse>> {
         let request_address = format!("{}/api/pull", self.server_address);
         self.stream_response(request_address, request)
+    }
+}
+
+pub struct OllamaClientBuilder {
+    server_address: String,
+    connection_timeout: Duration,
+}
+
+impl OllamaClientBuilder {
+    pub fn connection_timeout(mut self, timeout: Duration) -> Self {
+        self.connection_timeout = timeout;
+        self
+    }
+
+    pub fn build(self) -> OllamaClient {
+        OllamaClient {
+            server_address: self.server_address,
+            client: reqwest::Client::builder()
+                .connect_timeout(self.connection_timeout)
+                .build()
+                .expect("failed to build reqwest client"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_creates_client() {
+        let client = OllamaClient::new("http://localhost:11434");
+        assert_eq!(client.server_address, "http://localhost:11434");
+    }
+
+    #[test]
+    fn default_creates_localhost_client() {
+        let client = OllamaClient::default();
+        assert_eq!(client.server_address, "http://localhost:11434");
+    }
+
+    #[test]
+    fn builder_creates_client() {
+        let client = OllamaClient::builder("http://myserver:11434").build();
+        assert_eq!(client.server_address, "http://myserver:11434");
+    }
+
+    #[test]
+    fn builder_with_custom_timeout() {
+        let client = OllamaClient::builder("http://localhost:11434")
+            .connection_timeout(Duration::from_secs(60))
+            .build();
+        assert_eq!(client.server_address, "http://localhost:11434");
     }
 }
