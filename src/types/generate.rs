@@ -154,3 +154,122 @@ pub struct GenerateResponse {
     /// Time spent generating tokens in nanoseconds
     pub eval_duration: Option<u64>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn builder_minimal() {
+        let request = GenerateRequest::builder("llama3").build();
+        assert_eq!(request.model, "llama3");
+        assert!(request.prompt.is_none());
+        assert!(request.system.is_none());
+        assert!(request.images.is_empty());
+    }
+
+    #[test]
+    fn builder_with_all_fields() {
+        let request = GenerateRequest::builder("llama3")
+            .prompt("hello")
+            .system_prompt("you are helpful")
+            .suffix("end".to_string())
+            .stream(false)
+            .images(vec!["base64data".to_string()])
+            .format(json!("json"))
+            .think(Think::Bool(true))
+            .options(Options::builder().seed(42).build())
+            .build();
+
+        assert_eq!(request.model, "llama3");
+        assert_eq!(request.prompt, Some("hello".to_string()));
+        assert_eq!(request.system, Some("you are helpful".to_string()));
+        assert_eq!(request.suffix, Some("end".to_string()));
+        assert_eq!(request.stream, Some(false));
+        assert_eq!(request.images, vec!["base64data".to_string()]);
+        assert!(request.format.is_some());
+        assert!(request.think.is_some());
+        assert!(request.options.is_some());
+    }
+
+    #[test]
+    fn request_skips_none_fields() {
+        let request = GenerateRequest::builder("llama3").prompt("hello").build();
+        let json = serde_json::to_value(&request).unwrap();
+        let obj = json.as_object().unwrap();
+
+        assert!(obj.contains_key("model"));
+        assert!(obj.contains_key("prompt"));
+        assert!(!obj.contains_key("suffix"));
+        assert!(!obj.contains_key("system"));
+        assert!(!obj.contains_key("stream"));
+        assert!(!obj.contains_key("images"));
+        assert!(!obj.contains_key("format"));
+        assert!(!obj.contains_key("think"));
+        assert!(!obj.contains_key("options"));
+    }
+
+    #[test]
+    fn request_includes_images_when_nonempty() {
+        let request = GenerateRequest::builder("llama3")
+            .images(vec!["abc".to_string()])
+            .build();
+        let json = serde_json::to_value(&request).unwrap();
+        assert!(json.as_object().unwrap().contains_key("images"));
+    }
+
+    #[test]
+    fn response_deserialize_streaming_chunk() {
+        let json = json!({
+            "model": "llama3",
+            "created_at": "2024-01-01T00:00:00Z",
+            "response": "Hello",
+            "done": false
+        });
+        let response: GenerateResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(response.model, "llama3");
+        assert_eq!(response.response, "Hello");
+        assert!(!response.done);
+        assert!(response.done_reason.is_none());
+        assert!(response.total_duration.is_none());
+    }
+
+    #[test]
+    fn response_deserialize_final_chunk() {
+        let json = json!({
+            "model": "llama3",
+            "created_at": "2024-01-01T00:00:00Z",
+            "response": "",
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 5000000000u64,
+            "load_duration": 1000000000u64,
+            "prompt_eval_count": 10,
+            "prompt_eval_duration": 500000000u64,
+            "eval_count": 50,
+            "eval_duration": 3500000000u64
+        });
+        let response: GenerateResponse = serde_json::from_value(json).unwrap();
+        assert!(response.done);
+        assert_eq!(response.done_reason, Some("stop".to_string()));
+        assert_eq!(response.total_duration, Some(5_000_000_000));
+        assert_eq!(response.eval_count, Some(50));
+    }
+
+    #[test]
+    fn response_deserialize_with_thinking() {
+        let json = json!({
+            "model": "llama3",
+            "created_at": "2024-01-01T00:00:00Z",
+            "response": "The answer is 42.",
+            "thinking": "Let me think about this...",
+            "done": true
+        });
+        let response: GenerateResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(
+            response.thinking,
+            Some("Let me think about this...".to_string())
+        );
+    }
+}

@@ -172,3 +172,172 @@ pub struct ToolCallFunction {
     pub arguments: Value,
     pub index: usize,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn role_serializes_lowercase() {
+        assert_eq!(serde_json::to_value(&Role::User).unwrap(), json!("user"));
+        assert_eq!(
+            serde_json::to_value(&Role::System).unwrap(),
+            json!("system")
+        );
+        assert_eq!(
+            serde_json::to_value(&Role::Assistant).unwrap(),
+            json!("assistant")
+        );
+        assert_eq!(serde_json::to_value(&Role::Tool).unwrap(), json!("tool"));
+    }
+
+    #[test]
+    fn role_deserializes_lowercase() {
+        let role: Role = serde_json::from_value(json!("user")).unwrap();
+        assert!(matches!(role, Role::User));
+    }
+
+    #[test]
+    fn message_system_constructor() {
+        let msg = Message::system("you are helpful");
+        assert_eq!(msg.content, "you are helpful");
+        assert!(matches!(msg.role, Role::System));
+        assert!(msg.tool_calls.is_empty());
+    }
+
+    #[test]
+    fn message_user_constructor() {
+        let msg = Message::user("hello");
+        assert_eq!(msg.content, "hello");
+        assert!(matches!(msg.role, Role::User));
+    }
+
+    #[test]
+    fn message_tool_response_constructor() {
+        let value = json!({"temperature": 22.0});
+        let msg = Message::tool_response(&value).unwrap();
+        assert!(matches!(msg.role, Role::Tool));
+        assert_eq!(msg.content, serde_json::to_string(&value).unwrap());
+    }
+
+    #[test]
+    fn message_skips_empty_tool_calls() {
+        let msg = Message::user("hello");
+        let json = serde_json::to_value(&msg).unwrap();
+        assert!(!json.as_object().unwrap().contains_key("tool_calls"));
+    }
+
+    #[test]
+    fn message_deserializes_without_tool_calls() {
+        let json = json!({"content": "hi", "role": "user"});
+        let msg: Message = serde_json::from_value(json).unwrap();
+        assert_eq!(msg.content, "hi");
+        assert!(msg.tool_calls.is_empty());
+    }
+
+    #[test]
+    fn chat_request_always_serializes_messages() {
+        let request = ChatRequest::builder("llama3").build();
+        let json = serde_json::to_value(&request).unwrap();
+        let obj = json.as_object().unwrap();
+        assert!(obj.contains_key("messages"));
+        assert_eq!(obj["messages"], json!([]));
+    }
+
+    #[test]
+    fn chat_request_skips_optional_fields() {
+        let request = ChatRequest::builder("llama3").build();
+        let json = serde_json::to_value(&request).unwrap();
+        let obj = json.as_object().unwrap();
+        assert!(!obj.contains_key("stream"));
+        assert!(!obj.contains_key("options"));
+        assert!(!obj.contains_key("tools"));
+        assert!(!obj.contains_key("format"));
+        assert!(!obj.contains_key("think"));
+    }
+
+    #[test]
+    fn chat_request_builder_with_messages() {
+        let messages = vec![Message::system("be helpful"), Message::user("hello")];
+        let request = ChatRequest::builder("llama3")
+            .messages(messages)
+            .stream(false)
+            .build();
+
+        assert_eq!(request.model, "llama3");
+        assert_eq!(request.messages.len(), 2);
+        assert_eq!(request.stream, Some(false));
+    }
+
+    #[test]
+    fn tool_type_serializes_as_type_field() {
+        let tool = Tool {
+            tool_type: ToolType::Function,
+            function: Function {
+                name: "get_weather".to_string(),
+                description: "Get weather".to_string(),
+                parameters: json!({"type": "object"}),
+            },
+        };
+        let json = serde_json::to_value(&tool).unwrap();
+        let obj = json.as_object().unwrap();
+        assert!(obj.contains_key("type"));
+        assert!(!obj.contains_key("tool_type"));
+        assert_eq!(obj["type"], json!("function"));
+    }
+
+    #[test]
+    fn tool_type_deserializes_from_type_field() {
+        let json = json!({
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather",
+                "parameters": {"type": "object"}
+            }
+        });
+        let tool: Tool = serde_json::from_value(json).unwrap();
+        assert!(matches!(tool.tool_type, ToolType::Function));
+        assert_eq!(tool.function.name, "get_weather");
+    }
+
+    #[test]
+    fn chat_response_deserialize() {
+        let json = json!({
+            "model": "llama3",
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {"content": "Hello!", "role": "assistant"},
+            "done": false
+        });
+        let response: ChatResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(response.model, "llama3");
+        assert_eq!(response.message.content, "Hello!");
+        assert!(matches!(response.message.role, Role::Assistant));
+        assert!(!response.done);
+    }
+
+    #[test]
+    fn chat_response_with_tool_calls() {
+        let json = json!({
+            "model": "llama3",
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {
+                "content": "",
+                "role": "assistant",
+                "tool_calls": [{
+                    "function": {
+                        "name": "get_weather",
+                        "arguments": {"city": "Paris"},
+                        "index": 0
+                    }
+                }]
+            },
+            "done": true
+        });
+        let response: ChatResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(response.message.tool_calls.len(), 1);
+        assert_eq!(response.message.tool_calls[0].function.name, "get_weather");
+        assert_eq!(response.message.tool_calls[0].function.index, 0);
+    }
+}
