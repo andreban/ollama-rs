@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::error::OllamaResult;
 use crate::types::common::Options;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -38,12 +39,12 @@ impl Message {
         }
     }
 
-    pub fn tool_response(content: &Value) -> Self {
-        Message {
-            content: serde_json::to_string(content).unwrap(),
+    pub fn tool_response(content: &Value) -> OllamaResult<Self> {
+        Ok(Message {
+            content: serde_json::to_string(content)?,
             role: Role::Tool,
             tool_calls: vec![],
-        }
+        })
     }
 }
 

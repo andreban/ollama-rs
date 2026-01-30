@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let tool_call = &response.message.tool_calls[0];
         let arg: GetWeatherArgs = serde_json::from_value(tool_call.function.arguments.clone())?;
         let result = get_weather(&arg.city);
-        messages.push(Message::tool_response(&result));
+        messages.push(Message::tool_response(&result)?);
     }
     Ok(())
 }
