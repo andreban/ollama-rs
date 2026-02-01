@@ -6,6 +6,7 @@
 //! |--------------|-----------------------|------------------------------------------|
 //! | [`chat`]     | `POST /api/chat`      | Multi-turn chat conversations            |
 //! | [`delete`]   | `DELETE /api/delete`   | Delete a model from the server           |
+//! | [`embed`]    | `POST /api/embed`     | Generate vector embeddings               |
 //! | [`generate`] | `POST /api/generate`  | Single-prompt text generation            |
 //! | [`pull`]     | `POST /api/pull`      | Download models from the registry        |
 //! | [`tags`]     | `GET /api/tags`       | List available models                    |
@@ -19,6 +20,7 @@
 pub mod chat;
 pub mod common;
 pub mod delete;
+pub mod embed;
 pub mod generate;
 pub mod ps;
 pub mod pull;

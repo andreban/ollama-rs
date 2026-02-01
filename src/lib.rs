@@ -94,6 +94,7 @@ use crate::{
     types::{
         chat::{ChatRequest, ChatResponse},
         delete::DeleteRequest,
+        embed::{EmbedRequest, EmbedResponse},
         generate::{GenerateRequest, GenerateResponse},
         ps::PsResponse,
         pull::{PullRequest, PullResponse},
@@ -280,6 +281,47 @@ impl OllamaClient {
             .await?
             .error_for_status()?;
         Ok(())
+    }
+
+    /// Generates vector embeddings for the given input text(s).
+    ///
+    /// Calls `POST /api/embed`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OllamaError::NetworkError`] if the server is unreachable or returns
+    /// a non-success status code.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ollama_rs::OllamaClient;
+    /// # use ollama_rs::types::embed::EmbedRequest;
+    /// # async fn run() -> ollama_rs::error::OllamaResult<()> {
+    /// let client = OllamaClient::default();
+    /// let request = EmbedRequest::builder("embeddinggemma")
+    ///     .input("Generate embeddings for this text")
+    ///     .build();
+    ///
+    /// let response = client.embed(request).await?;
+    /// for embedding in &response.embeddings {
+    ///     println!("Dimension count: {}", embedding.len());
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn embed(&self, request: EmbedRequest) -> OllamaResult<EmbedResponse> {
+        let request_address = format!("{}/api/embed", self.server_address);
+        info!("Generate embeddings: {}", request.model);
+        Ok(self
+            .client
+            .post(request_address)
+            .json(&request)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
     }
 
     fn stream_response<R: Serialize, T: DeserializeOwned>(
