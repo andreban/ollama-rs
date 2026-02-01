@@ -8,7 +8,7 @@ An async Rust client library for the [Ollama](https://ollama.com/) API. Provides
 - Text generation and multi-turn chat conversations
 - Structured JSON output with schema validation
 - Tool calling / function calling support
-- Model management (list, pull, inspect running models)
+- Model management (list, pull, delete, inspect running models)
 - Builder pattern for constructing requests
 - Configurable generation parameters (temperature, top-k, top-p, and more)
 - Thinking / reasoning mode support
@@ -160,6 +160,7 @@ When the model decides to call a tool, the response `message.tool_calls` field w
 | `generate(request)` | Generate text (streaming) |
 | `chat(request)` | Chat conversation (streaming) |
 | `pull(request)` | Pull/download a model (streaming) |
+| `delete(request)` | Delete a model from the server |
 
 **`OllamaClient::builder(server_address)`** -- `.connection_timeout(Duration)`, `.build()`
 
@@ -206,6 +207,7 @@ The `examples/` directory contains runnable programs:
 | `structured_output` | JSON structured output with schema |
 | `tool_call` | Function calling / tool use |
 | `pull` | Download a model |
+| `delete` | Delete a model |
 | `tags` | List available models |
 | `ps` | List running models |
 | `version` | Query server version |
