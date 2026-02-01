@@ -93,6 +93,7 @@ use crate::{
     error::{OllamaError, OllamaResult},
     types::{
         chat::{ChatRequest, ChatResponse},
+        delete::DeleteRequest,
         generate::{GenerateRequest, GenerateResponse},
         ps::PsResponse,
         pull::{PullRequest, PullResponse},
@@ -245,6 +246,40 @@ impl OllamaClient {
             .error_for_status()?
             .json()
             .await?)
+    }
+
+    /// Deletes a model from the Ollama server.
+    ///
+    /// Calls `DELETE /api/delete`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OllamaError::NetworkError`] if the server is unreachable, the model
+    /// does not exist, or the server returns a non-success status code.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ollama_rs::OllamaClient;
+    /// # use ollama_rs::types::delete::DeleteRequest;
+    /// # async fn run() -> ollama_rs::error::OllamaResult<()> {
+    /// let client = OllamaClient::default();
+    /// let request = DeleteRequest::new("gemma3");
+    /// client.delete(request).await?;
+    /// println!("Model deleted successfully");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn delete(&self, request: DeleteRequest) -> OllamaResult<()> {
+        let request_address = format!("{}/api/delete", self.server_address);
+        info!("Delete model: {}", request.model);
+        self.client
+            .delete(request_address)
+            .json(&request)
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
     }
 
     fn stream_response<R: Serialize, T: DeserializeOwned>(
