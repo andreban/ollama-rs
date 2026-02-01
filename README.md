@@ -9,6 +9,7 @@ An async Rust client library for the [Ollama](https://ollama.com/) API. Provides
 - Structured JSON output with schema validation
 - Tool calling / function calling support
 - Model management (list, pull, delete, inspect running models)
+- Text embeddings generation
 - Builder pattern for constructing requests
 - Configurable generation parameters (temperature, top-k, top-p, and more)
 - Thinking / reasoning mode support
@@ -161,6 +162,7 @@ When the model decides to call a tool, the response `message.tool_calls` field w
 | `chat(request)` | Chat conversation (streaming) |
 | `pull(request)` | Pull/download a model (streaming) |
 | `delete(request)` | Delete a model from the server |
+| `embed(request)` | Generate vector embeddings |
 
 **`OllamaClient::builder(server_address)`** -- `.connection_timeout(Duration)`, `.build()`
 
@@ -180,6 +182,8 @@ let client = OllamaClient::builder("http://localhost:11434")
 **`ChatRequest::builder(model)`** -- `.messages()`, `.tools()`, `.format()`, `.options()`, `.stream()`, `.think()`
 
 **`PullRequest::builder(model)`** -- `.stream()`
+
+**`EmbedRequest::builder(model)`** -- `.input()`, `.inputs()`, `.truncate()`, `.dimensions()`, `.keep_alive()`, `.options()`
 
 ### Generation Options
 
@@ -208,6 +212,7 @@ The `examples/` directory contains runnable programs:
 | `tool_call` | Function calling / tool use |
 | `pull` | Download a model |
 | `delete` | Delete a model |
+| `embed` | Generate text embeddings |
 | `tags` | List available models |
 | `ps` | List running models |
 | `version` | Query server version |
