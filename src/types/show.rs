@@ -93,7 +93,7 @@ mod tests {
         assert_eq!(response.parameters, Some("temperature 0.7".to_string()));
         assert_eq!(response.template, Some("Please answer:".to_string()));
         assert_eq!(response.system, Some("You are helpful".to_string()));
-        
+
         let details = response.details.unwrap();
         assert_eq!(details.format, "gguf");
         assert_eq!(details.family, "llama");
