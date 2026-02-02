@@ -9,6 +9,7 @@
 //! | [`embed`]    | `POST /api/embed`     | Generate vector embeddings               |
 //! | [`generate`] | `POST /api/generate`  | Single-prompt text generation            |
 //! | [`pull`]     | `POST /api/pull`      | Download models from the registry        |
+//! | [`show`]     | `POST /api/show`      | Show model details                       |
 //! | [`tags`]     | `GET /api/tags`       | List available models                    |
 //! | [`ps`]       | `GET /api/ps`         | List currently loaded/running models     |
 //! | [`version`]  | `GET /api/version`    | Query the server version                 |
@@ -24,5 +25,6 @@ pub mod embed;
 pub mod generate;
 pub mod ps;
 pub mod pull;
+pub mod show;
 pub mod tags;
 pub mod version;

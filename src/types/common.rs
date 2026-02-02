@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Detailed metadata about a model, returned by the tags and ps endpoints.
+/// Detailed metadata about a model, returned by the tags, ps, and show endpoints.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelDetails {
     /// The model file format (e.g., `"gguf"`).
