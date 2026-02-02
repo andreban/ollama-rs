@@ -162,6 +162,7 @@ When the model decides to call a tool, the response `message.tool_calls` field w
 | `chat(request)` | Chat conversation (streaming) |
 | `pull(request)` | Pull/download a model (streaming) |
 | `delete(request)` | Delete a model from the server |
+| `show_model(request)` | Show information about a model |
 | `embed(request)` | Generate vector embeddings |
 
 **`OllamaClient::builder(server_address)`** -- `.connection_timeout(Duration)`, `.build()`
@@ -184,6 +185,8 @@ let client = OllamaClient::builder("http://localhost:11434")
 **`PullRequest::builder(model)`** -- `.stream()`
 
 **`EmbedRequest::builder(model)`** -- `.input()`, `.inputs()`, `.truncate()`, `.dimensions()`, `.keep_alive()`, `.options()`
+
+**`ShowModelRequest::new(model)`** -- `.verbose()`
 
 ### Generation Options
 
@@ -212,6 +215,7 @@ The `examples/` directory contains runnable programs:
 | `tool_call` | Function calling / tool use |
 | `pull` | Download a model |
 | `delete` | Delete a model |
+| `show_model` | Show model information |
 | `embed` | Generate text embeddings |
 | `tags` | List available models |
 | `ps` | List running models |

@@ -98,6 +98,7 @@ use crate::{
         generate::{GenerateRequest, GenerateResponse},
         ps::PsResponse,
         pull::{PullRequest, PullResponse},
+        show::{ShowModelRequest, ShowModelResponse},
         tags::TagsResponse,
         version::VersionResponse,
     },
@@ -455,6 +456,43 @@ impl OllamaClient {
     pub fn pull(&self, request: PullRequest) -> impl Stream<Item = OllamaResult<PullResponse>> {
         let request_address = format!("{}/api/pull", self.server_address);
         self.stream_response(request_address, request)
+    }
+
+    /// Shows information about a model.
+    ///
+    /// Calls `POST /api/show`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OllamaError::NetworkError`] if the server is unreachable or returns
+    /// a non-success status code.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ollama_rs::OllamaClient;
+    /// # use ollama_rs::types::show::ShowModelRequest;
+    /// # async fn run() -> ollama_rs::error::OllamaResult<()> {
+    /// let client = OllamaClient::default();
+    /// let request = ShowModelRequest::new("llama3".to_string());
+    ///
+    /// let response = client.show_model(request).await?;
+    /// println!("Model info: {:?}", response);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn show_model(&self, request: ShowModelRequest) -> OllamaResult<ShowModelResponse> {
+        let request_address = format!("{}/api/show", self.server_address);
+        info!("Show model: {}", request.name);
+        Ok(self
+            .client
+            .post(request_address)
+            .json(&request)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
     }
 }
 
