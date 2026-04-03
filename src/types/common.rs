@@ -220,7 +220,7 @@ impl OptionsBuilder {
 /// let single = Stop::Single("END".to_string());
 /// let multiple = Stop::Multiple(vec!["END".to_string(), "STOP".to_string()]);
 /// ```
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Stop {
     /// A single stop sequence.
