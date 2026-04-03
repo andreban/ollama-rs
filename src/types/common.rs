@@ -84,7 +84,7 @@ pub enum ThinkLevel {
 ///     .stop(Stop::Single("END".to_string()))
 ///     .build();
 /// ```
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Options {
     /// Random seed for reproducible outputs.
     #[serde(skip_serializing_if = "Option::is_none")]
