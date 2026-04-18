@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the model pull (download) endpoint (`POST /api/pull`).
 //!
 //! Use [`PullRequest::builder()`] to construct a request and pass it to

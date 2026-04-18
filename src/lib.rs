@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! # ollama-rs
 //!
 //! An async Rust client library for the [Ollama](https://ollama.com/) API.

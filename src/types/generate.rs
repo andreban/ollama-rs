@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the text generation endpoint (`POST /api/generate`).
 //!
 //! Use [`GenerateRequest::builder()`] to construct a request and pass it to

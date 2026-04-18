@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the chat conversation endpoint (`POST /api/chat`).
 //!
 //! Use [`ChatRequest::builder()`] to construct a request and pass it to

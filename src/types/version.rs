@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the server version endpoint (`GET /api/version`).
 //!
 //! The response from [`OllamaClient::version()`](crate::OllamaClient::version)

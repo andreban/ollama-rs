@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the model listing endpoint (`GET /api/tags`).
 //!
 //! The response from [`OllamaClient::tags()`](crate::OllamaClient::tags) is
