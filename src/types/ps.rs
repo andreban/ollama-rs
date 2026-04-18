@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the running-models endpoint (`GET /api/ps`).
 //!
 //! The response from [`OllamaClient::ps()`](crate::OllamaClient::ps) is

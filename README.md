@@ -1,5 +1,7 @@
 # ollama-rs
 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 An async Rust client library for the [Ollama](https://ollama.com/) API. Provides a streaming-first interface for text generation, multi-turn chat, model management, and advanced features like structured output and tool calling.
 
 ## Features
@@ -233,3 +235,7 @@ OLLAMA_SERVER=http://localhost:11434 cargo run --example chat
 |----------------------|-------------|
 | `OLLAMA_SERVER` | Ollama server address (e.g., `http://localhost:11434`) |
 | `RUST_LOG` | Log level filter (e.g., `ollama_rs=debug`) |
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).

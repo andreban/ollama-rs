@@ -1,3 +1,6 @@
+// Copyright 2026 Andre Cipriani Bandarra
+// SPDX-License-Identifier: Apache-2.0
+
 //! Types for the show model information endpoint (`POST /api/show`).
 //!
 //! Use [`ShowModelRequest`] to construct a request and pass it to
