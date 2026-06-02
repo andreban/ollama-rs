@@ -64,6 +64,12 @@ pub struct Message {
     pub content: String,
     /// The role of the message sender.
     pub role: Role,
+    /// The model's reasoning output, populated on assistant messages when
+    /// thinking mode is enabled. `None` for messages that don't carry
+    /// reasoning content.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub thinking: Option<String>,
     /// Tool calls requested by the assistant, if any.
     ///
     /// Empty for non-assistant messages. Omitted from serialization when empty.
@@ -86,6 +92,7 @@ impl Message {
         Self {
             content: content.into(),
             role: Role::System,
+            thinking: None,
             tool_calls: vec![],
         }
     }
@@ -103,6 +110,7 @@ impl Message {
         Self {
             content: content.into(),
             role: Role::User,
+            thinking: None,
             tool_calls: vec![],
         }
     }
@@ -128,6 +136,7 @@ impl Message {
         Ok(Message {
             content: serde_json::to_string(content)?,
             role: Role::Tool,
+            thinking: None,
             tool_calls: vec![],
         })
     }
@@ -188,7 +197,9 @@ impl ChatRequest {
 /// A single chunk of a streaming chat response.
 ///
 /// When streaming, each chunk contains a partial [`Message`]. The final chunk
-/// has [`done`](ChatResponse::done) set to `true`.
+/// has [`done`](ChatResponse::done) set to `true` and includes performance
+/// statistics (`*_duration` fields) and token counts (`prompt_eval_count`,
+/// `eval_count`).
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatResponse {
     /// The model that generated this response.
@@ -199,6 +210,41 @@ pub struct ChatResponse {
     pub message: Message,
     /// `true` when this is the final chunk of the response.
     pub done: bool,
+
+    /// The reason generation stopped (e.g., `"stop"`, `"load"`, `"unload"`).
+    /// Only present in the final chunk.
+    #[serde(default)]
+    pub done_reason: Option<String>,
+
+    /// Total time spent generating the response, in nanoseconds. Only present
+    /// in the final chunk.
+    #[serde(default)]
+    pub total_duration: Option<u64>,
+
+    /// Time spent loading the model, in nanoseconds. Only present in the final
+    /// chunk.
+    #[serde(default)]
+    pub load_duration: Option<u64>,
+
+    /// Number of tokens in the evaluated prompt. Only present in the final
+    /// chunk.
+    #[serde(default)]
+    pub prompt_eval_count: Option<u64>,
+
+    /// Time spent evaluating the prompt, in nanoseconds. Only present in the
+    /// final chunk.
+    #[serde(default)]
+    pub prompt_eval_duration: Option<u64>,
+
+    /// Number of tokens generated in the response. Only present in the final
+    /// chunk.
+    #[serde(default)]
+    pub eval_count: Option<u64>,
+
+    /// Time spent generating output tokens, in nanoseconds. Only present in
+    /// the final chunk.
+    #[serde(default)]
+    pub eval_duration: Option<u64>,
 }
 
 /// A builder for constructing a [`ChatRequest`].
@@ -476,7 +522,7 @@ mod tests {
     }
 
     #[test]
-    fn chat_response_deserialize() {
+    fn chat_response_deserialize_streaming_chunk() {
         let json = json!({
             "model": "llama3",
             "created_at": "2024-01-01T00:00:00Z",
@@ -488,6 +534,55 @@ mod tests {
         assert_eq!(response.message.content, "Hello!");
         assert!(matches!(response.message.role, Role::Assistant));
         assert!(!response.done);
+        assert!(response.done_reason.is_none());
+        assert!(response.total_duration.is_none());
+        assert!(response.load_duration.is_none());
+        assert!(response.prompt_eval_count.is_none());
+        assert!(response.prompt_eval_duration.is_none());
+        assert!(response.eval_count.is_none());
+        assert!(response.eval_duration.is_none());
+    }
+
+    #[test]
+    fn chat_response_deserialize_final_chunk() {
+        let json = json!({
+            "model": "llama3.2",
+            "created_at": "2023-08-04T19:22:45.499127Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 4883583458u64,
+            "load_duration": 1334875u64,
+            "prompt_eval_count": 26,
+            "prompt_eval_duration": 342546000u64,
+            "eval_count": 282,
+            "eval_duration": 4535599000u64
+        });
+        let response: ChatResponse = serde_json::from_value(json).unwrap();
+        assert!(response.done);
+        assert_eq!(response.done_reason, Some("stop".to_string()));
+        assert_eq!(response.total_duration, Some(4_883_583_458));
+        assert_eq!(response.load_duration, Some(1_334_875));
+        assert_eq!(response.prompt_eval_count, Some(26));
+        assert_eq!(response.prompt_eval_duration, Some(342_546_000));
+        assert_eq!(response.eval_count, Some(282));
+        assert_eq!(response.eval_duration, Some(4_535_599_000));
+    }
+
+    #[test]
+    fn chat_response_deserialize_load_only() {
+        // Loading a model returns just done_reason without any timing stats.
+        let json = json!({
+            "model": "llama3.2",
+            "created_at": "2024-09-12T21:17:29.110811Z",
+            "message": {"role": "assistant", "content": ""},
+            "done_reason": "load",
+            "done": true
+        });
+        let response: ChatResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(response.done_reason, Some("load".to_string()));
+        assert!(response.total_duration.is_none());
+        assert!(response.eval_count.is_none());
     }
 
     #[test]
@@ -512,5 +607,38 @@ mod tests {
         assert_eq!(response.message.tool_calls.len(), 1);
         assert_eq!(response.message.tool_calls[0].function.name, "get_weather");
         assert_eq!(response.message.tool_calls[0].function.index, 0);
+    }
+
+    #[test]
+    fn message_deserializes_thinking_field() {
+        let json = json!({
+            "content": "The answer is 42.",
+            "role": "assistant",
+            "thinking": "Let me work through this..."
+        });
+        let msg: Message = serde_json::from_value(json).unwrap();
+        assert_eq!(
+            msg.thinking,
+            Some("Let me work through this...".to_string())
+        );
+    }
+
+    #[test]
+    fn message_skips_thinking_when_none() {
+        let msg = Message::user("hello");
+        let json = serde_json::to_value(&msg).unwrap();
+        assert!(!json.as_object().unwrap().contains_key("thinking"));
+    }
+
+    #[test]
+    fn message_constructors_default_thinking_to_none() {
+        assert!(Message::system("s").thinking.is_none());
+        assert!(Message::user("u").thinking.is_none());
+        assert!(
+            Message::tool_response(&json!({"k": "v"}))
+                .unwrap()
+                .thinking
+                .is_none()
+        );
     }
 }

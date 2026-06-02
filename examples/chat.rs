@@ -47,6 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         messages.push(Message {
             content: full_message,
             role: Role::Assistant,
+            thinking: None,
             tool_calls: vec![],
         });
     }
