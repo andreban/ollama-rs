@@ -617,7 +617,10 @@ mod tests {
             "thinking": "Let me work through this..."
         });
         let msg: Message = serde_json::from_value(json).unwrap();
-        assert_eq!(msg.thinking, Some("Let me work through this...".to_string()));
+        assert_eq!(
+            msg.thinking,
+            Some("Let me work through this...".to_string())
+        );
     }
 
     #[test]
@@ -631,9 +634,11 @@ mod tests {
     fn message_constructors_default_thinking_to_none() {
         assert!(Message::system("s").thinking.is_none());
         assert!(Message::user("u").thinking.is_none());
-        assert!(Message::tool_response(&json!({"k": "v"}))
-            .unwrap()
-            .thinking
-            .is_none());
+        assert!(
+            Message::tool_response(&json!({"k": "v"}))
+                .unwrap()
+                .thinking
+                .is_none()
+        );
     }
 }
