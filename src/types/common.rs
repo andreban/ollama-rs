@@ -45,7 +45,7 @@ pub struct ModelDetails {
 /// use ollama_rs::types::common::ThinkLevel;
 /// let think = Think::Level(ThinkLevel::High);
 /// ```
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Think {
     /// Enable (`true`) or disable (`false`) thinking mode.
@@ -57,7 +57,7 @@ pub enum Think {
 /// Named intensity levels for extended-thinking mode.
 ///
 /// Serialized as lowercase strings: `"high"`, `"medium"`, `"low"`.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ThinkLevel {
     /// Maximum reasoning depth.
@@ -279,6 +279,21 @@ mod tests {
         let think = Think::Level(ThinkLevel::High);
         let json = serde_json::to_value(&think).unwrap();
         assert_eq!(json, json!("high"));
+    }
+
+    #[test]
+    fn think_is_clone_and_eq() {
+        let a = Think::Level(ThinkLevel::Medium);
+        let b = a.clone();
+        assert_eq!(a, b);
+        assert_ne!(a, Think::Bool(true));
+    }
+
+    #[test]
+    fn think_level_is_copy() {
+        let a = ThinkLevel::High;
+        let b = a;
+        assert_eq!(a, b);
     }
 
     #[test]
